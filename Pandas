@@ -1,8 +1,0 @@
-#Import pandas as pd
-import pandas as pd
-
-#Import the cars as auto.csv data: auto
-cars = pd.read_csv('Auto.csv')
-
-#Print out observation
-print(cars.iloc[2])
