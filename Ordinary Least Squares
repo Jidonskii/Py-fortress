@@ -1,0 +1,40 @@
+import pandas as pd
+import statsmodels.api as sm
+
+# Read the CSV file into a DataFrame
+df = pd.read_csv(r'C:\Users\jidon\Documents\Freelancer\Jeweler Cart\new storm.csv')
+
+# Fill NaN values with 0
+df.fillna(0, inplace=True)
+
+# Create a new column 'Intensity' which is the sum of the 4th, 5th, and 6th columns
+df['Intensity'] = df.iloc[:, 3:6].sum(axis=1)
+
+df['Temperature'] = df.iloc[:, 6]
+df['Frequency'] = df.iloc[:, 7]
+
+# Define independent variable (X) and dependent variable (Y)
+X = df['Temperature']
+Y = df['Frequency']
+
+# Add a constant to the independent variable (X) for the intercept term
+X = sm.add_constant(X)
+
+# Fit the linear regression model
+model = sm.OLS(Y, X).fit()
+
+# Print the summary of the regression model
+print(model.summary())
+
+# Define independent variable (X) and dependent variable (Y)
+X = df['Temperature']
+Y = df['Intensity']
+
+# Add a constant to the independent variable (X) for the intercept term
+X = sm.add_constant(X)
+
+# Fit the linear regression model
+model = sm.OLS(Y, X).fit()
+
+# Print the summary of the regression model
+print(model.summary())
