@@ -1,0 +1,42 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Read the CSV file into a DataFrame
+df = pd.read_csv(r'C:\Users\jidon\Documents\Freelancer\Jeweler Cart\new storm.csv')
+
+# Fill NaN values with 0
+df.fillna(0, inplace=True)
+
+# Extracting the temperature data
+X = df.index  # Assuming the index represents time
+df['Temperature'] = df.iloc[:, 6]
+Y = df['Temperature']
+
+# Performing linear regression
+coefficients = np.polyfit(X, Y, 1)
+linear_function = np.poly1d(coefficients)
+
+# Calculate R-squared value
+Y_pred = linear_function(X)
+ss_res = np.sum((Y - Y_pred)**2)
+ss_tot = np.sum((Y - np.mean(Y))**2)
+r_squared = 1 - (ss_res / ss_tot)
+
+# Plotting
+plt.figure(figsize=(10, 6))
+
+# Plot actual temperature values
+plt.scatter(X, Y, label='Actual Temperature', color='blue')
+
+# Plot linear function
+plt.plot(X, linear_function(X), label='Linear Function', color='red')
+
+plt.xlabel('Time')
+plt.ylabel('Temperature')
+plt.title('Temperature Linear Function (R-squared = {:.2f})'.format(r_squared))
+plt.legend()
+plt.grid(True)
+plt.show()
+
+print("R-squared value:", r_squared)
