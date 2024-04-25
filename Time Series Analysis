@@ -1,0 +1,31 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Read the CSV file into a DataFrame
+df = pd.read_csv(r'C:\Users\jidon\Documents\Freelancer\Jeweler Cart\new storm.csv')
+
+# Fill NaN values with 0
+df.fillna(0, inplace=True)
+
+# Create a new column 'Intensity' which is the sum of the 4th, 5th, and 6th columns
+df['Intensity'] = df.iloc[:, 3:6].sum(axis=1)
+
+# Normalize columns 6 to 8
+columns_to_normalize = df.columns[6:9]
+for column in columns_to_normalize:
+    df[column] = (df[column] - df[column].mean()) / df[column].std()
+
+# Plotting
+plt.figure(figsize=(10, 6))
+
+# Plot Year (assuming it's the x-axis), Temperature, Frequency and Intensity
+plt.plot(df.iloc[:, 0], df.iloc[:, 8], label=df.columns[8])  
+plt.plot(df.iloc[:, 0], df.iloc[:, 7], label=df.columns[7])  
+plt.plot(df.iloc[:, 0], df.iloc[:, 6], label='Temperature', color='red', linewidth=2)
+
+plt.xlabel('Year')
+plt.ylabel('Normalized Value')
+plt.title('Time Series Plot of Year with Temperature, Frequency and Intensity')
+plt.legend()
+plt.grid(True)
+plt.show()
