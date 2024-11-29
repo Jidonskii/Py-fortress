@@ -1,0 +1,115 @@
+import yfinance as yf
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+from scipy.optimize import minimize
+
+# Use yfinance package to download S&P 500 stock data
+url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+table = pd.read_html(url)
+sandp500_table = table[0]
+sandp500_tickers = sandp500_table["Symbol"].tolist()
+# Pick the tickers whose GICS sector is Information Technology
+sandp500_sector = sandp500_table["GICS Sector"].tolist()
+df = pd.DataFrame(sandp500_table)
+sandp500_techsector_indices = df.loc[df["GICS Sector"] == "Information Technology"].index
+y = slice(len(sandp500_techsector_indices))
+
+data = yf.download(sandp500_tickers[y], start = "2023-01-01", end = "2024-01-01")
+dframe = pd.DataFrame(data["Adj Close"])  # Pick out the Adjusted Close columns from the downloaded dataset
+dfr = dframe.drop("BRK.B", axis = 'columns')  # Remove the BRK.B sector which has null values
+print(dfr)
+num_assets = len(dfr.columns)
+risk_free_rate = 0.0391
+
+# Plot growth of investments over total dataset
+(dfr/dfr.iloc[0] * 100).plot(figsize = (16,9))
+
+# Calculate Mean Returns, Covariance Matrix and Correlation
+returns = np.log(dfr/dfr.shift(1))
+mean_returns = returns.mean() * 252  # 252 is the average number of trading days per year
+print(mean_returns)
+cov_returns = returns.cov() * 252
+print(cov_returns)
+corr_returns = returns.corr()
+print(corr_returns)
+
+port_weight = []  # Weight list
+port_returns = []  # Returns list
+port_volatility = []  # Volatility list
+sharpe_ratio = []  # Sharpe Ratio list
+
+# Generate 10,000 portfolio combinations which include random weights, returns, volatility and Sharpe Ratio
+for x in range(10000):
+    wei = np.random.random(num_assets)
+    wei /= np.sum(wei)
+    port_weight.append(wei)
+    
+    ret = np.sum(wei * returns.mean()) * 252
+    port_returns.append(ret)
+    
+    vol = np.sqrt(np.dot(wei.T, np.dot(returns.cov() * 252, wei)))
+    port_volatility.append(vol)
+    
+    shr = (ret - risk_free_rate)/vol
+    sharpe_ratio.append(shr)
+
+# Convert to NumPy arrays
+port_weight = np.array(port_weight)
+port_returns = np.array(port_returns)
+port_volatility = np.array(port_volatility)
+sharpe_ratio = np.array(sharpe_ratio)
+print(port_weight)
+print(port_returns)
+print(port_volatility)
+print(sharpe_ratio)
+
+# Plot the Efficient Frontier
+plt.figure(figsize=(10, 6))
+plt.scatter(port_volatility, port_returns, c = sharpe_ratio, cmap = "RdYlBu", marker = "o")
+plt.xlabel("Volatility (Risk)")
+plt.ylabel("Return")
+plt.colorbar(label = "Sharpe Ratio")
+plt.title("Efficient Frontier")
+plt.show()
+
+# Return the index of the maximum Sharpe Ratio
+shr_idx = np.argmax(sharpe_ratio)
+print(shr_idx)
+
+# Find the portfolio weight for each asset at that index
+i = 0
+while i < num_assets:
+    print("Asset : %s : %2.2f" % (sandp500_tickers[y][i], (port_weight[shr_idx][i] * 100)))
+    i += 1
+
+# Find the volatility of that portfolio
+print("\nVolatility (Risk) :", port_volatility[shr_idx])
+# Find the return of that portfolio
+print("Return :", port_returns[shr_idx])
+
+# Function that takes in weight, returns an array of return, volatility and Sharpe Ratio
+def get_returns_volatility_sharpe(wei):
+    wei = np.array(wei)
+    ret = np.sum(wei * returns.mean()) * 252
+    vol = np.sqrt(np.dot(wei.T, np.dot(returns.cov() * 252, wei)))
+    shr = (ret - risk_free_rate)/vol
+    return np.array([ret, vol, shr])
+
+# Negative Sharpe Ratio Function
+def negative_sharpe_ratio(wei):
+    return get_returns_volatility_sharpe(wei)[2] * -1
+
+def check_sum(wei):
+    return np.sum(wei) - 1
+
+# Constraints and Bounds
+constraints = ({"type": "eq", "fun": check_sum})
+bounds = tuple((0,1) for x in range(num_assets))
+# Initial Guess (Equal Distribution)
+initial_guess = num_assets * [1./num_assets]
+# Sequential Least Squares Programming (SLSQP)
+optimal_results = minimize(negative_sharpe_ratio, initial_guess, method = "SLSQP", bounds = bounds, constraints = constraints)
+
+optimal_results.x
