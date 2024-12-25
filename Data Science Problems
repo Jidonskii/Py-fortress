@@ -1,0 +1,17 @@
+import numpy as np
+import pandas as pd
+
+# Read the data into a dataframe with given column names
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+column_names = ["Sepal Width", "Sepal Length", "Petal Width", "Petal Length", "Species"]
+data = pd.read_csv(url, names = column_names)
+df = pd.DataFrame(data)
+
+# Group Sepal Width column according to the given Species name
+sepal_width = df["Sepal Width"]
+iris_setosa = df.loc[df["Species"] == "Iris-setosa"].index
+y = slice(len(iris_setosa))
+
+# Calculate the mean of the grouped Sepal Width column
+grouped_mean = np.mean(sepal_width[y])
+print(grouped_mean)
