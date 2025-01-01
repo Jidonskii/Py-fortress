@@ -15,3 +15,4 @@ y = slice(len(iris_setosa))
 # Calculate the mean of the grouped Sepal Width column
 grouped_mean = np.mean(sepal_width[y])
 print(grouped_mean)
+
