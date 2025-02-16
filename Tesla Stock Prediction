@@ -1,0 +1,63 @@
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+import keras
+from keras import layers
+from keras.layers import LSTM
+
+# Set up and split dataset
+df = pd.read_csv(r'C:\Python\Tesla.csv')
+df = df['Open'].values
+df = df.reshape(-1, 1)
+dataset_train = np.array(df[:int(df.shape[0] * 0.8)])
+dataset_test = np.array(df[int(df.shape[0] * 0.8):])
+
+# Scale data
+scaler = MinMaxScaler(feature_range = (0,1))
+dataset_train = scaler.fit_transform(dataset_train)
+dataset_test = scaler.transform(dataset_test)
+
+# Create a sequence function
+def create_dataset(data, time_steps = 10):
+    x, y = [], []
+    for i in range(len(data) - time_steps):
+        x.append(data[i: i + time_steps])
+        y.append(data[i + time_steps])
+    return np.array(x), np.array(y)
+
+# Create train and test datasets
+x_train, y_train = create_dataset(dataset_train)
+x_test, y_test = create_dataset(dataset_test)
+
+# Reshape x_train and x_test datasets for LSTM input
+x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
+x_test = x_test.reshape((x_test.shape[0], x_test.shape[1], 1))
+
+# Build Sequential model
+model = keras.Sequential(
+    [
+        LSTM(4, return_sequences = True, input_shape = (10,1)),
+        layers.Dropout(0.2),
+        LSTM(4),
+        layers.Dropout(0.2),
+        layers.Dense(1)
+    ]
+)
+
+# Compile and fit the model for training
+model.compile(optimizer = "Adam", loss = "mean_squared_error", metrics = ["mae"])
+model.fit(
+    x_train, 
+    y_train, 
+    batch_size = 16, 
+    epochs = 5, 
+    verbose = 0, 
+    validation_data = (x_test, y_test), 
+)
+
+# Model summary
+model.summary()
+
+# Predict x_test values and print predictions
+y_pred = model.predict(x_test)
+print(y_pred)
