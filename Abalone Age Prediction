@@ -1,0 +1,49 @@
+import numpy as np
+import pandas as pd
+import keras
+from keras import layers
+from sklearn.model_selection import train_test_split
+
+# Set up dataset, assign column names, modify certain columns and split dataset
+df = pd.read_csv(r"C:\Python\abalone.data")
+df.columns = ["Sex", "Length", "Diameter", "Height", "Whole_weight", "Shucked_weight", "Viscera_weight", 
+              "Shell_weight", "Age"]
+df["Sex"] = df["Sex"].astype("category").cat.as_ordered()
+df["Sex"] = df["Sex"].cat.codes
+df["Age"] = df["Age"] + 1.5
+df_features = df.drop("Age", axis = 1)
+df_target = df["Age"]
+
+# Convert to numpy arrays
+x = np.array(df_features)
+y = np.array(df_target)
+
+# Create train and test datasets
+x_train, x_test, y_train, y_test = train_test_split(x,
+                                                    y,
+                                                    test_size = 0.2,
+                                                    random_state = 12)
+
+# Build Sequential model
+model = keras.Sequential(
+    [
+        layers.Dense(64),
+        layers.Dense(1)
+    ]
+)
+
+# Compile and fit the model for training
+model.compile(optimizer = "Adam", loss = "mean_squared_error", metrics = ["mae"])
+fitted_model = model.fit(
+                    x_train, 
+                    y_train, 
+                    epochs = 10, 
+                    verbose = 0, 
+                    validation_data = (x_test, y_test)
+                )
+
+# Print model fitting history
+print(fitted_model.history)
+
+# Model summary
+model.summary()
